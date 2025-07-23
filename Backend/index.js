@@ -1,6 +1,9 @@
 const app = require("./app");
 const dotenv = require("dotenv"); 
+const connectDB = require("./config/mongooseConfig");
+
 dotenv.config();
+connectDB();
 
 const port = process.env.PORT;
 app.listen(port, () => {
