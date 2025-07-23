@@ -26,7 +26,18 @@ async function handleLogin(req,res){
    return res.json({ token });
 }
 
+const getUsers = async (req, res) => {
+  try {
+    const users = await userModel.find({ _id: { $ne: req.user._id } });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+    console.log(error);
+  }
+};
+
 module.exports = {
     handleRegistration,
-    handleLogin
+    handleLogin,
+    getUsers
 };
