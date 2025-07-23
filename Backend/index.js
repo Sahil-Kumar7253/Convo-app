@@ -5,11 +5,7 @@ const connectDB = require("./config/mongooseConfig");
 dotenv.config();
 connectDB();
 
-const port = process.env.PORT;
+const port = process.env.PORT || 3000;
 app.listen(port, () => {
       console.log(`Server is running on port: http://localhost:${port}`);
 });
-
-app.get("/" , (req, res) => {
-    res.send("Hello World");
-})

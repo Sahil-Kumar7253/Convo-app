@@ -3,7 +3,7 @@ const secret = process.env.JWT_SECRET_KEY;
 
 function getUser(token){
     if(!token) return null;
-    return jwt.verify(token, secret);
+    return jwt.verify(token, process.env.JWT_SECRET_KEY);
 }
 
 function checkforauthentication(req , res , next){
