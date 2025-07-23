@@ -24,12 +24,16 @@ class ApiService {
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'email': email, 'password': password}),
     );
+
+    print('Response status code: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
     return json.decode(response.body);
   }
 
   Future<List<UserModel>> getUsers(String token) async {
     final response = await http.get(
-      Uri.parse('$_baseUrl/api/users'),
+      Uri.parse('$_baseUrl/users'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -46,7 +50,7 @@ class ApiService {
 
   Future<List<Message>> getChatHistory(String token, String receiverId) async {
     final response = await http.get(
-      Uri.parse('$_baseUrl/api/messages/$receiverId'),
+      Uri.parse('$_baseUrl/messages/$receiverId'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',

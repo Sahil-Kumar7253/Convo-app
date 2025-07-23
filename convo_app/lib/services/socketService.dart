@@ -23,13 +23,13 @@ class SocketService {
       _socket.emit('register_user', userId);
     });
 
-    _socket.on('receive_private_message', (data) {
+    _socket.on('receive_message', (data) {
       _messageController.add(data);
     });
   }
 
   void sendMessage(String senderId, String receiverId, String content) {
-    _socket.emit('send_private_message', {
+    _socket.emit('send_message', {
       'senderId': senderId,
       'receiverId': receiverId,
       'content': content,
