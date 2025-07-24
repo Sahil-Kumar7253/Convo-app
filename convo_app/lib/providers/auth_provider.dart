@@ -13,16 +13,10 @@ class AuthProvider with ChangeNotifier {
   String? get token => _token;
   String? get userId => _userId;
 
-  Future<bool> tryAutoLogin() async {
+  Future<void> _saveToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    if (!prefs.containsKey('userData')) {
-      return false;
-    }
-    final extractedUserData = json.decode(prefs.getString('userData')!) as Map<String, dynamic>;
-    _token = extractedUserData['token'];
-    _userId = extractedUserData['userId'];
-    notifyListeners();
-    return true;
+    final userData = json.encode({'token': _token, 'userId': _userId});
+    await prefs.setString('userData', userData);
   }
 
   Future<void> login(String email, String password) async {
@@ -30,7 +24,7 @@ class AuthProvider with ChangeNotifier {
     if (response.containsKey('token')) {
       _token = response['token'];
       _userId = response['_id'];
-      _saveToPrefs();
+      await _saveToPrefs(); // Use await to ensure data is saved
       notifyListeners();
     } else {
       throw Exception(response['message']);
@@ -42,11 +36,29 @@ class AuthProvider with ChangeNotifier {
     if (response.containsKey('token')) {
       _token = response['token'];
       _userId = response['_id'];
-      _saveToPrefs();
+      await _saveToPrefs(); // Use await to ensure data is saved
       notifyListeners();
     } else {
       throw Exception(response['message']);
     }
+  }
+
+  Future<bool> tryAutoLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!prefs.containsKey('userData')) {
+      return false;
+    }
+    final extractedUserData =
+    json.decode(prefs.getString('userData')!) as Map<String, Object?>;
+    _token = extractedUserData['token'] as String?;
+    _userId = extractedUserData['userId'] as String?;
+
+    if (_token == null || _userId == null) {
+      return false;
+    }
+
+    notifyListeners();
+    return true;
   }
 
   Future<void> logout() async {
@@ -55,11 +67,5 @@ class AuthProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('userData');
     notifyListeners();
-  }
-
-  Future<void> _saveToPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userData = json.encode({'token': _token, 'userId': _userId});
-    await prefs.setString('userData', userData);
   }
 }

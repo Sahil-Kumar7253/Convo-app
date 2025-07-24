@@ -7,36 +7,41 @@ const initializeSocket = (io) => {
         console.log(`User Connected: ${socket.id}`);
         
         socket.on("register_user", (userId) => {
-            if(userID){
-                userSocketMap[userID] = socket.id;
+            if(userId){
+                userSocketMap[userId] = socket.id;
                 console.log(`User ${userId} registered with socket ${socket.id}`);
                 console.log('Online users:', Object.keys(userSocketMap));
             }
         });
-       
-        socket.on("send_message", async (data) => {
-            const { senderId, receiverId, content } = data;
-            
-            try{
-                const newMessage = new Message({
-                    sender: senderId,
-                    receiver: receiverId,
-                    content,
-                });
+  
+        socket.on('send_private_message', async (data) => {
 
-                const savedMessage = await newMessage.save();
-                await savedMessage.populate('sender', 'name email');
-                 
-                const receiverSocketId = userSocketMap[receiverId];
+        console.log('Data received from client for send_private_message:', data);
 
-                if(receiverSocketId){
-                    io.to(receiverSocketId).emit("receive_message", savedMessage);
-                }
+        const { senderId, receiverId, content } = data;
+  
+        try {
+            const newMessage = new Message({
+            sender: senderId,
+            receiver: receiverId,
+            content: content,
+        });
+    
+        const savedMessage = await newMessage.save();
+        await savedMessage.populate('sender', 'name email');
 
-                socket.emit("receive_message", savedMessage);
-            }catch(error){
-                console.error('Error handling private message:', error);
-            }
+        console.log('Message saved successfully to DB:', savedMessage);
+
+        const recipientSocketId = userSocketMap[receiverId];
+    
+        socket.emit('receive_private_message', savedMessage);
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit('receive_private_message', savedMessage);
+        }
+
+        } catch (error) {
+            console.error('Error saving message to DB:', error.message);
+        }
         });
 
         socket.on("disconnect", () => {

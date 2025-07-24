@@ -19,15 +19,18 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch the chat history when the screen loads
+    // THE FIX: Get the authProvider to pass the token
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     Provider.of<ChatProvider>(context, listen: false)
-        .fetchChatHistory(widget.receiver.id);
+        .fetchChatHistory(authProvider.token!, widget.receiver.id);
   }
 
   void _sendMessage() {
     if (_controller.text.isEmpty) return;
+    // THE FIX: Get the authProvider to pass the sender's ID
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     Provider.of<ChatProvider>(context, listen: false)
-        .sendMessage(widget.receiver.id, _controller.text);
+        .sendMessage(authProvider.userId!, widget.receiver.id, _controller.text);
     _controller.clear();
   }
 
@@ -42,9 +45,10 @@ class _ChatScreenState extends State<ChatScreen> {
           Expanded(
             child: Consumer<ChatProvider>(
               builder: (ctx, chatProvider, _) => ListView.builder(
+                reverse: true, // Show latest messages at the bottom
                 itemCount: chatProvider.messages.length,
                 itemBuilder: (ctx, i) {
-                  final message = chatProvider.messages[i];
+                  final message = chatProvider.messages.reversed.toList()[i];
                   return MessageBubble(
                     message: message.content,
                     isMe: message.senderId == authProvider.userId,
@@ -61,10 +65,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: TextField(
                     controller: _controller,
                     decoration: const InputDecoration(labelText: 'Send a message...'),
+                    onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send),
+                  icon: Icon(Icons.send, color: Theme.of(context).primaryColor),
                   onPressed: _sendMessage,
                 ),
               ],

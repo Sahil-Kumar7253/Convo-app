@@ -5,18 +5,46 @@ import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import 'authScreen.dart';
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
 
-    if (authProvider.isAuthenticated) {
-      Provider.of<ChatProvider>(context, listen: false).connectSocket();
-      return const UserListScreen();
-    } else {
-      return const AuthScreen();
-    }
+class _AuthWrapperState extends State<AuthWrapper> {
+  late Future<void> _autoLoginFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _autoLoginFuture = Provider.of<AuthProvider>(context, listen: false).tryAutoLogin();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: _autoLoginFuture,
+      builder: (ctx, authResultSnapshot) {
+        if (authResultSnapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        return Consumer<AuthProvider>(
+          builder: (ctx, auth, _) {
+            if (auth.isAuthenticated) {
+              final chatProvider = Provider.of<ChatProvider>(ctx, listen: false);
+              chatProvider.connectAndListen(auth.userId!);
+              chatProvider.fetchUsers(auth.token!);
+
+              return const UserListScreen();
+            } else {
+              Provider.of<ChatProvider>(ctx, listen: false).disconnect();
+              return const AuthScreen();
+            }
+          },
+        );
+      },
+    );
   }
 }

@@ -23,7 +23,7 @@ async function handleLogin(req,res){
    if(!validpassKey) return res.status(401).json({error:"Invalid password"});
 
    const token = jwt.sign({ _id : user._id ,email : user.email, name : user.name},process.env.JWT_SECRET_KEY);
-   return res.json({ token });
+   return res.json({ token, _id: user._id, });
 }
 
 const getUsers = async (req, res) => {

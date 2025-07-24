@@ -18,6 +18,8 @@ const io = new Server(server, {
   }
 });
 
+initializeSocket(io);
+
 app.use((req, res, next) => {
   req.io = io;
   next();
@@ -26,6 +28,5 @@ app.use((req, res, next) => {
 app.use("/api/users" , userRouter);
 app.use("/api/messages" , messageRoute);
 
-initializeSocket(io);
 
-module.exports = app;
+module.exports = server;

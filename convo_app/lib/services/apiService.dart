@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/messageModel.dart';
 import '../models/userModel.dart';
-import '../utils/cosntants.dart';
+import '../utils/constants.dart';
 
 class ApiService {
 
