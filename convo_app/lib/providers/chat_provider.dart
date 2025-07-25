@@ -4,7 +4,6 @@ import '../models/messageModel.dart';
 import '../models/userModel.dart';
 import '../services/apiService.dart';
 import '../services/socketService.dart';
-import 'auth_provider.dart';
 
 
 class ChatProvider with ChangeNotifier {
@@ -14,6 +13,7 @@ class ChatProvider with ChangeNotifier {
   List<UserModel> _users = [];
   List<Message> _messages = [];
   StreamSubscription? _messageSubscription;
+  StreamSubscription? _deleteMessageSubscription;
 
   // We no longer need to store the AuthProvider instance here
 
@@ -27,6 +27,16 @@ class ChatProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print(e);
+    }
+  }
+
+  Future<void> deletedMessage(String token, String messageId) async {
+    try {
+      await _apiService.deleteMessage(token, messageId);
+      print('Message deleted successfully');
+    } catch (e) {
+      print(e);
+      rethrow;
     }
   }
 
@@ -50,6 +60,13 @@ class ChatProvider with ChangeNotifier {
       _messages.add(Message.fromJson(data));
       notifyListeners();
     });
+
+    _deleteMessageSubscription?.cancel();
+    _deleteMessageSubscription = _socketService.deleteMessages.listen((data) {
+      final String deletedMessageId = data['messageId'];
+      _messages.removeWhere((msg) => msg.id == deletedMessageId);
+      notifyListeners();
+    });
   }
 
   void sendMessage(String senderId, String receiverId, String content) {
@@ -59,5 +76,6 @@ class ChatProvider with ChangeNotifier {
   void disconnect() {
     _socketService.disconnect();
     _messageSubscription?.cancel();
+    _deleteMessageSubscription?.cancel();
   }
 }

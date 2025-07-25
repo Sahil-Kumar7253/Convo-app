@@ -53,7 +53,45 @@ const sendMessage = async (req, res) => {
   }
 };
 
+async function handleDelteMessage(req, res) {
+  try {
+    const messageId = req.params.messageId;
+    const userId = req.user._id; 
+
+    const message = await Message.findOne(messageId);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    if (message.sender.toString() !== userId.toString()) {
+      return res.status(401).json({ message: 'User not authorized to delete this message' });
+    }
+
+    await message.deleteOne();
+    
+    const io = req.io;
+    const senderSocketId = userSocketMap[message.sender.toString()];
+    const receiverSocketId = userSocketMap[message.receiver.toString()];
+    
+    const deletePayload = { messageId: message._id };
+
+    if (senderSocketId) {
+      io.to(senderSocketId).emit('message_deleted', deletePayload);
+    }
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('message_deleted', deletePayload);
+    }
+    
+    res.json({ message: 'Message deleted successfully' });
+
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }}
+
 module.exports = {
   getChatHistory,
-  sendMessage
+  sendMessage,
+  handleDelteMessage
 };

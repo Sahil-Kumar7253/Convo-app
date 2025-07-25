@@ -19,11 +19,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: MaterialApp(
-        title: 'Gappa',
+        title: 'Convo',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           primarySwatch: Colors.teal,
-          visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         home: const AuthWrapper(),
       ),
