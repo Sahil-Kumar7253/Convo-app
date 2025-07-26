@@ -24,12 +24,27 @@ class _UserListScreenState extends State<UserListScreen> {
         title: const Text('Start a Conversation'),
         elevation: 1,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle, size: 30),
-            onPressed: () {
+          GestureDetector(
+            onTap: (){
               Navigator.of(context).pushNamed(ProfileScreen.routeName);
             },
-          )
+
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundImage: Provider.of<AuthProvider>(context, listen: false).userImage != null
+                    ? NetworkImage(Provider.of<AuthProvider>(context, listen: false).userImage!)
+                    : null,
+                child: (Provider.of<AuthProvider>(context, listen: false).userImage == null)
+                    ? Text(
+                  Provider.of<AuthProvider>(context, listen: false).userName?[0].toUpperCase() ?? 'U',
+                  style: const TextStyle(fontSize: 50, fontWeight: FontWeight.bold),
+                )
+                    : null,
+              ),
+            ),
+          ),
         ],
       ),
       body: Consumer<ChatProvider>(
@@ -57,14 +72,18 @@ class _UserListScreenState extends State<UserListScreen> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                         leading: CircleAvatar(
                           radius: 25,
-                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                          child: Text(
+                          // --- THE FIX IS HERE ---
+                          // Use backgroundImage for network images.
+                          backgroundImage: user.image != null
+                              ? NetworkImage(user.image!)
+                              : null,
+                          // Provide a fallback child if the image is null.
+                          child: (user.image == null)
+                              ? Text(
                             user.name[0].toUpperCase(),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          )
+                              : null,
                         ),
                         title: Text(
                           user.name,

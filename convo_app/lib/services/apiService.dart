@@ -86,4 +86,21 @@ class ApiService {
       headers: {"authorization": "Bearer $token"},
     );
   }
+
+  Future<Map<String, dynamic>> uploadProfileImage(String token, String filePath) async {
+    final uri = Uri.parse(Constants.profileImageUrl);
+    final request = http.MultipartRequest('POST', uri);
+
+    request.headers['authorization'] = 'Bearer $token';
+    request.files.add(await http.MultipartFile.fromPath('image', filePath));
+
+    final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+
+    if (response.statusCode == 200) {
+      return json.decode(responseBody);
+    } else {
+      throw Exception(json.decode(responseBody)['message'] ?? 'Failed to upload image.');
+    }
+  }
 }

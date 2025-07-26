@@ -30,18 +30,17 @@ class ProfileScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
-            // Profile picture avatar
             CircleAvatar(
               radius: 60,
-              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
-              child: Text(
+              backgroundImage: authProvider.userImage != null
+                  ? NetworkImage(authProvider.userImage!)
+                  : null,
+              child: (authProvider.userImage == null)
+                  ? Text(
                 authProvider.userName?[0].toUpperCase() ?? 'U',
-                style: TextStyle(
-                  fontSize: 50,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).primaryColor,
-                ),
-              ),
+                style: const TextStyle(fontSize: 50, fontWeight: FontWeight.bold),
+              )
+                  : null,
             ),
             const SizedBox(height: 30),
             // User details in cards

@@ -1,18 +1,18 @@
-const userModel = require("../models/userModel");
+const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: "dtvhcqamv",
+  api_key: 487995442537151,
+  api_secret:"xEzj01opQoTx1aq7tOLaZ5TMTvU",
 });
 
 async function handleRegistration(req, res) {
     try{
       const {name,email,password} = req.body;
-      const user = await userModel.create({name,email,password});
+      const user = await User.create({name,email,password});
 
       return res.status(201).json({message:"User created successfully",user});
       
@@ -23,19 +23,19 @@ async function handleRegistration(req, res) {
 
 async function handleLogin(req,res){
     const {email,password} = req.body;
-    const user = await userModel.findOne({email});
+    const user = await User.findOne({email});
     if(!user) return res.status(404).json({error:"User not found"});
 
    const validpassKey = await bcrypt.compare(password,user.password);
    if(!validpassKey) return res.status(401).json({error:"Invalid password"});
 
    const token = jwt.sign({ _id : user._id ,email : user.email, name : user.name},process.env.JWT_SECRET_KEY);
-   return res.json({ token, _id: user._id, });
+   return res.json({ token, _id: user._id, image : user.image });
 }
 
 async function handleUpdateUser(req,res){
   try {
-        const user = await userModel.findOne(req.user.id);
+        const user = await User.findOne(req.user.id);
         if(user){
           user.name = req.body.name || user.name;
           user.email = user.email;
@@ -58,7 +58,7 @@ async function handleUpdateUser(req,res){
 
 const getUsers = async (req, res) => {
   try {
-    const users = await userModel.find({ _id: { $ne: req.user._id } });
+    const users = await User.find({ _id: { $ne: req.user._id } });
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
@@ -68,6 +68,7 @@ const getUsers = async (req, res) => {
 
 async function uploadProfileImage(req, res) {
   try {
+    console.log(process.env.CLOUDINARY_API_KEY);
     if (!req.file) {
       return res.status(400).json({ message: 'No image file uploaded.' });
     }
@@ -79,7 +80,8 @@ async function uploadProfileImage(req, res) {
       folder: "chat_app_profiles",
     });
     
-    const user = await userModel.findOne(req.user._id);
+    const user = await User.findById(req.user._id);
+  
     if (user) {
       user.image = result.secure_url;
       await user.save();

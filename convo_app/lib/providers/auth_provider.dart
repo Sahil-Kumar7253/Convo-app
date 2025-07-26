@@ -10,6 +10,7 @@ class AuthProvider with ChangeNotifier {
   String? _userId;
   String? _userName;
   String? _userEmail;
+  String? _userImage;
 
   final ApiService _apiService = ApiService();
 
@@ -18,11 +19,17 @@ class AuthProvider with ChangeNotifier {
   String? get userId => _userId;
   String? get userName => _userName;
   String? get userEmail => _userEmail;
+  String? get userImage => _userImage;
 
   Future<void> _saveToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    final userData = json.encode({'token': _token, 'userId': _userId,'userName': _userName,
-      'userEmail': _userEmail,});
+    final userData = json.encode({
+      'token': _token,
+      'userId': _userId,
+      'userName': _userName,
+      'userEmail': _userEmail,
+      'userImage': _userImage,
+    });
     await prefs.setString('userData', userData);
   }
 
@@ -34,7 +41,7 @@ class AuthProvider with ChangeNotifier {
       final Map<String, dynamic> payload = Jwt.parseJwt(_token!);
       _userName = payload['name'];
       _userEmail = payload['email'];
-
+      _userImage = response['image'];
       await _saveToPrefs(); // Use await to ensure data is saved
       notifyListeners();
     } else {
@@ -64,13 +71,14 @@ class AuthProvider with ChangeNotifier {
        _userId = response['_id'];
        _userName = response['name'];
        _userEmail = response['email'];
-
        await _saveToPrefs();
        notifyListeners();
     }catch(e){
       rethrow;
     }
   }
+
+
 
   Future<bool> tryAutoLogin() async {
     final prefs = await SharedPreferences.getInstance();
@@ -83,6 +91,7 @@ class AuthProvider with ChangeNotifier {
     _userId = extractedUserData['userId'] as String?;
     _userName = extractedUserData['userName'] as String?;
     _userEmail = extractedUserData['userEmail'] as String?;
+    _userImage = extractedUserData['userImage'] as String?;
 
     if (_token == null || _userId == null) {
       return false;
@@ -92,11 +101,24 @@ class AuthProvider with ChangeNotifier {
     return true;
   }
 
+  Future<void> uploadProfileImage(String filePath) async {
+    if (_token == null) return;
+    try {
+      final response = await _apiService.uploadProfileImage(_token!, filePath);
+      _userImage = response['image'];
+      await _saveToPrefs();
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     _token = null;
     _userId = null;
     _userName = null;
     _userEmail = null;
+    _userImage = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('userData');
     notifyListeners();

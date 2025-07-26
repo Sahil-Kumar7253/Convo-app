@@ -24,9 +24,12 @@ const userSchema = new mongoose.Schema({
     },
 }, {timestamps : true});
 
-userSchema.pre("save" , async function(){
+userSchema.pre("save" , async function(next){
     try{
         var user = this;
+        if (!this.isModified('password')) {
+         return next(); // FIX #2: Add 'return' to stop the password from being re-hashed.
+        }
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(user.password, salt);
         user.password = hashedPassword;

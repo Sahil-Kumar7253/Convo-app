@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -15,9 +18,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   final _passwordController = TextEditingController();
-
   String _password = '';
   bool _isLoading = false;
+  File? _imageFile;
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+      // Immediately upload the image
+      try {
+        await Provider.of<AuthProvider>(context, listen: false).uploadProfileImage(_imageFile!.path);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile image updated!'), backgroundColor: Colors.green),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -85,98 +110,108 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Profile'),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              // Profile Avatar Section
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                    child: Text(
-                      authProvider.userName?[0].toUpperCase() ?? 'U',
-                      style: TextStyle(
-                        fontSize: 50,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.grey.shade300,
-                      child: const Icon(Icons.edit, color: Colors.black54),
-                    ),
-                  )
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // Form Section
-              Form(
-                key: _formKey,
-                child: Column(
+    return Consumer<AuthProvider>(
+      builder: (ctx, authProvider, _) =>  Scaffold(
+        appBar: AppBar(
+          title: const Text('Edit Profile'),
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
+                // Profile Avatar Section
+                Stack(
                   children: [
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: _buildInputDecoration('Name', Icons.person_outline),
-                      textCapitalization: TextCapitalization.words,
-                      validator: (value) => value!.isEmpty ? 'Please enter a name.' : null,
+                    CircleAvatar(
+                      radius: 60,
+                      backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                      backgroundImage: _imageFile != null
+                          ? FileImage(_imageFile!) as ImageProvider
+                          : authProvider.userImage != null
+                          ? NetworkImage(authProvider.userImage!)
+                          : null,
+                      child: (_imageFile == null && authProvider.userImage == null)
+                          ? Icon(
+                        Icons.person,
+                        size: 60,
+                        color: Theme.of(context).primaryColor,
+                      )
+                          : null,
                     ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: _buildInputDecoration('E-Mail', Icons.email_outlined),
-                      readOnly: true, // Email is not editable
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      decoration: _buildInputDecoration('New Password (optional)', Icons.lock_outline),
-                      obscureText: true,
-                      controller: _passwordController,
-                      validator: (value) {
-                        if (value!.isNotEmpty && value.length < 6) {
-                          return 'Password must be at least 6 characters long.';
-                        }
-                        return null;
-                      },
-                      onSaved: (value) => _password = value!,
-                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.grey.shade300,
+                        // Make the edit icon tappable
+                        child: IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.black54),
+                          onPressed: _pickImage,
+                        ),
+                      ),
+                    )
                   ],
                 ),
-              ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // Save Changes Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _saveForm,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
+                // Form Section
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: _buildInputDecoration('Name', Icons.person_outline),
+                        textCapitalization: TextCapitalization.words,
+                        validator: (value) => value!.isEmpty ? 'Please enter a name.' : null,
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: _buildInputDecoration('E-Mail', Icons.email_outlined),
+                        readOnly: true, // Email is not editable
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        decoration: _buildInputDecoration('New Password (optional)', Icons.lock_outline),
+                        obscureText: true,
+                        controller: _passwordController,
+                        validator: (value) {
+                          if (value!.isNotEmpty && value.length < 6) {
+                            return 'Password must be at least 6 characters long.';
+                          }
+                          return null;
+                        },
+                        onSaved: (value) => _password = value!,
+                      ),
+                    ],
                   ),
-                  child: const Text('Save Changes', style: TextStyle(fontSize: 16)),
                 ),
-              ),
-            ],
+                const SizedBox(height: 32),
+
+                // Save Changes Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saveForm,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Save Changes', style: TextStyle(fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
