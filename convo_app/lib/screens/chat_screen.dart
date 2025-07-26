@@ -78,6 +78,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 itemCount: chatProvider.messages.length,
                 itemBuilder: (ctx, i) {
                   final message = chatProvider.messages.reversed.toList()[i];
+                  print("the message id is : ${message.id}");
                   return MessageBubble(
                     onLongPress: () => _deleteMessage(message.id),
                     message: message.content,
