@@ -18,7 +18,7 @@ const initializeSocket = (io) => {
 
         console.log('Data received from client for send_private_message:', data);
 
-        const { senderId, receiverId, content } = data;
+        const { senderId, receiverId, content} = data;
   
         try {
             const newMessage = new Message({

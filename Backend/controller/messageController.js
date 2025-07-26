@@ -1,5 +1,12 @@
 const Message = require('../models/messageModel');
 const {userSocketMap} = require("./socketController")
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: "dtvhcqamv",
+  api_key: 487995442537151,
+  api_secret:"xEzj01opQoTx1aq7tOLaZ5TMTvU",
+});
 
 async function getChatHistory(req ,res) {
     try{
@@ -21,7 +28,7 @@ async function getChatHistory(req ,res) {
 }
 
 const sendMessage = async (req, res) => {
-  const { content, receiverId } = req.body;
+  const { content, receiverId} = req.body;
   const senderId = req.user._id;
 
   const io = req.io;
@@ -52,6 +59,49 @@ const sendMessage = async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 };
+
+async function sendImageMessage(req, res) {
+
+  try{
+    const {recieverId} = req.body;
+    const senderId = req.user._id;
+    
+    if(!req.file){
+      return res.status(400).json({message : "No image file uploaded"});
+    }
+    if(!recieverId){
+      return res.status(400).json({message : "User Not Found"});
+    }
+    const b64 = Buffer.from(req.file.buffer).toString("base64");
+    let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: "chat_app_images",
+    });
+
+    const newMessage = new Message({
+      sender: senderId,
+      receiver: recieverId,
+      messageType : "image",
+      imageUrl : result.secure_url
+    });
+
+    const savedMessage = await newMessage.save();
+    await savedMessage.populate('sender', 'name email'); 
+
+    const io =req.io;
+    const recipientSocketId = userSocketMap[recieverId];
+    socket.emit('receive_private_message', savedMessage);
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit('receive_private_message', savedMessage);
+    }
+
+    res.status(201).json(savedMessage);
+  }catch(e){
+    console.error("Image message error:", error);
+    res.status(500).json({ message: 'Server error while sending image.' });
+  }
+}
 
 async function handleDelteMessage(req, res) {
   try {
@@ -93,5 +143,6 @@ async function handleDelteMessage(req, res) {
 module.exports = {
   getChatHistory,
   sendMessage,
-  handleDelteMessage
+  handleDelteMessage,
+  sendImageMessage
 };
