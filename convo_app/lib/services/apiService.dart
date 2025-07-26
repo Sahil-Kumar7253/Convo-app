@@ -64,6 +64,22 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> updateProfile(String token, Map<String, dynamic> data) async {
+    final response = await http.put(
+      Uri.parse(Constants.updateUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: json.encode(data)
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception(json.decode(response.body)['message'] ?? 'Failed to update profile.');
+    }
+  }
+
   Future<void> deleteMessage(String token, String messageId)async {
     await http.delete(
       Uri.parse("http://10.0.2.2:3000/api/messages/$messageId"),

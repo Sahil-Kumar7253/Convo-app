@@ -1,6 +1,7 @@
 import 'package:convo_app/providers/auth_provider.dart';
 import 'package:convo_app/providers/chat_provider.dart';
 import 'package:convo_app/screens/auth_wrapper.dart';
+import 'package:convo_app/screens/edit_profile_screen.dart';
 import 'package:convo_app/screens/profileScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
         home: const AuthWrapper(),
         routes: {
           ProfileScreen.routeName: (_) => const ProfileScreen(),
+          EditProfileScreen.routeName : (_) => const EditProfileScreen()
         },
       ),
     );

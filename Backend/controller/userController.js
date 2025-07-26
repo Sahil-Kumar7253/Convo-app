@@ -28,11 +28,10 @@ async function handleLogin(req,res){
 
 async function handleUpdateUser(req,res){
   try {
-        const user = await userModel.findOne(req.params.id,);
+        const user = await userModel.findOne(req.user.id);
         if(user){
           user.name = req.body.name || user.name;
-          user.email = req.body.email || user.email;
-
+          user.email = user.email;
           if (req.body.password) {
            user.password = req.body.password;
           }

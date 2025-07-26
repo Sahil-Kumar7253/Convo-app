@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   static const routeName = '/profile';
@@ -14,6 +15,14 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Profile'),
+        actions: [
+          IconButton(
+              onPressed: (){
+                Navigator.of(context).pushNamed(EditProfileScreen.routeName);
+              },
+              icon: Icon(Icons.edit)
+          )
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),

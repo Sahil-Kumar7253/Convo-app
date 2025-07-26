@@ -56,6 +56,22 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updateProfile(Map<String, dynamic> updateData) async {
+    if(_token == null) return;
+    try{
+       final response = await _apiService.updateProfile(_token!, updateData);
+       _token = response['token'];
+       _userId = response['_id'];
+       _userName = response['name'];
+       _userEmail = response['email'];
+
+       await _saveToPrefs();
+       notifyListeners();
+    }catch(e){
+      rethrow;
+    }
+  }
+
   Future<bool> tryAutoLogin() async {
     final prefs = await SharedPreferences.getInstance();
     if (!prefs.containsKey('userData')) {
