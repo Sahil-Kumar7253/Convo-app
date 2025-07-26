@@ -1,3 +1,4 @@
+import 'package:convo_app/screens/profileScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -24,9 +25,9 @@ class _UserListScreenState extends State<UserListScreen> {
         elevation: 1,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.account_circle, size: 30),
             onPressed: () {
-              Provider.of<AuthProvider>(context, listen: false).logout();
+              Navigator.of(context).pushNamed(ProfileScreen.routeName);
             },
           )
         ],
