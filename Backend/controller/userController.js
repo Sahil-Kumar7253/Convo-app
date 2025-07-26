@@ -26,6 +26,30 @@ async function handleLogin(req,res){
    return res.json({ token, _id: user._id, });
 }
 
+async function handleUpdateUser(req,res){
+  try {
+        const user = await userModel.findOne(req.params.id,);
+        if(user){
+          user.name = req.body.name || user.name;
+          user.email = req.body.email || user.email;
+
+          if (req.body.password) {
+           user.password = req.body.password;
+          }
+        }
+        const updatedUser = await user.save();
+        return res.json({
+          _id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          token: jwt.sign({ _id : user._id ,email : user.email, name : user.name},process.env.JWT_SECRET_KEY)
+        }); 
+      } catch (error) {
+        console.error('Error updating user:', error);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+
 const getUsers = async (req, res) => {
   try {
     const users = await userModel.find({ _id: { $ne: req.user._id } });
@@ -39,5 +63,6 @@ const getUsers = async (req, res) => {
 module.exports = {
     handleRegistration,
     handleLogin,
+    handleUpdateUser,
     getUsers
 };
