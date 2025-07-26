@@ -12,9 +12,10 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
   final _passwordController = TextEditingController();
-  late String _name;
-  late String _email;
+
   String _password = '';
   bool _isLoading = false;
 
@@ -22,8 +23,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    _name = authProvider.userName!;
-    _email = authProvider.userEmail!;
+    _nameController = TextEditingController(text: authProvider.userName!);
+    _emailController = TextEditingController(text: authProvider.userEmail!);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   Future<void> _saveForm() async {
@@ -31,15 +40,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _formKey.currentState!.save();
     setState(() { _isLoading = true; });
 
-    final updateData = {'name': _name, 'email': _email};
+    final updateData = {
+      'name': _nameController.text,
+      'email': _emailController.text
+    };
     if (_password.isNotEmpty) {
       updateData['password'] = _password;
     }
 
     try {
       await Provider.of<AuthProvider>(context, listen: false).updateProfile(updateData);
-      Navigator.of(context).pop();
-      Navigator.of(context).pop();// Go back to profile screen on success
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pop();
+      }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
     } finally {
@@ -49,49 +65,116 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  InputDecoration _buildInputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12.0),
+        borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2.0),
+      ),
+      filled: true,
+      fillColor: Colors.grey.shade100,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Profile'),
-        actions: [
-          IconButton(icon: const Icon(Icons.save), onPressed: _saveForm),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
+          : SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
             children: [
-              TextFormField(
-                initialValue: _name,
-                decoration: const InputDecoration(labelText: 'Name'),
-                textCapitalization: TextCapitalization.words,
-                validator: (value) => value!.isEmpty ? 'Please enter a name.' : null,
-                onSaved: (value) => _name = value!,
+              // Profile Avatar Section
+              Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                    child: Text(
+                      authProvider.userName?[0].toUpperCase() ?? 'U',
+                      style: TextStyle(
+                        fontSize: 50,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.grey.shade300,
+                      child: const Icon(Icons.edit, color: Colors.black54),
+                    ),
+                  )
+                ],
               ),
-              TextFormField(
-                initialValue: _email,
-                decoration: const InputDecoration(labelText: 'E-Mail'),
-                readOnly: true,
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) => !value!.contains('@') ? 'Please enter a valid email.' : null,
-                onSaved: (value) => _email = value!,
+              const SizedBox(height: 32),
+
+              // Form Section
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: _buildInputDecoration('Name', Icons.person_outline),
+                      textCapitalization: TextCapitalization.words,
+                      validator: (value) => value!.isEmpty ? 'Please enter a name.' : null,
+                    ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: _buildInputDecoration('E-Mail', Icons.email_outlined),
+                      readOnly: true, // Email is not editable
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      decoration: _buildInputDecoration('New Password (optional)', Icons.lock_outline),
+                      obscureText: true,
+                      controller: _passwordController,
+                      validator: (value) {
+                        if (value!.isNotEmpty && value.length < 6) {
+                          return 'Password must be at least 6 characters long.';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) => _password = value!,
+                    ),
+                  ],
+                ),
               ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'New Password'),
-                obscureText: true,
-                controller: _passwordController,
-                validator: (value) {
-                  if (value!.isNotEmpty && value.length < 6) {
-                    return 'Password must be at least 6 characters long.';
-                  }
-                  return null;
-                },
-                onSaved: (value) => _password = value!,
+              const SizedBox(height: 32),
+
+              // Save Changes Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saveForm,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Save Changes', style: TextStyle(fontSize: 16)),
+                ),
               ),
             ],
           ),

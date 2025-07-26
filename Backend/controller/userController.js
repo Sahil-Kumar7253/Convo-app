@@ -1,6 +1,13 @@
 const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 async function handleRegistration(req, res) {
     try{
@@ -59,9 +66,40 @@ const getUsers = async (req, res) => {
   }
 };
 
+async function uploadProfileImage(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file uploaded.' });
+    }
+
+    const b64 = Buffer.from(req.file.buffer).toString("base64");
+    let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: "chat_app_profiles",
+    });
+    
+    const user = await userModel.findOne(req.user._id);
+    if (user) {
+      user.image = result.secure_url;
+      await user.save();
+      return res.json({
+        message: 'Image uploaded successfully',
+        image: user.image,
+      });
+    } else {
+      return res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    console.error("Image upload error:", error);
+    return res.status(500).json({ message: 'Server error during image upload.' });
+  }
+}
+
 module.exports = {
     handleRegistration,
     handleLogin,
     handleUpdateUser,
-    getUsers
+    getUsers,
+    uploadProfileImage
 };
