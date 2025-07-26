@@ -1,4 +1,6 @@
+import 'package:convo_app/services/apiService.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../models/userModel.dart';
 import '../providers/auth_provider.dart';
@@ -15,6 +17,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _controller = TextEditingController();
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -31,6 +34,28 @@ class _ChatScreenState extends State<ChatScreen> {
     Provider.of<ChatProvider>(context, listen: false)
         .sendMessage(authProvider.userId!, widget.receiver.id, _controller.text);
     _controller.clear();
+  }
+
+  void _sendImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+
+    print("The reciever Id is : ${widget.receiver.id}");
+
+    if(pickedFile != null){
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      try{
+        await _apiService.sendImageMessage(
+            authProvider.token!,
+            widget.receiver.id,
+            pickedFile.path
+        );
+      }catch(e){
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
   }
 
   void _deleteMessage(String messageId) {
@@ -81,7 +106,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   print("the message id is : ${message.id}");
                   return MessageBubble(
                     onLongPress: () => _deleteMessage(message.id),
-                    message: message.content,
+                    message: message,
                     isMe: message.senderId == authProvider.userId,
                   );
                 },
@@ -98,6 +123,10 @@ class _ChatScreenState extends State<ChatScreen> {
               padding: const EdgeInsets.fromLTRB(20, 0, 5, 0),
               child: Row(
                 children: [
+                  IconButton(
+                    icon: Icon(Icons.attach_file, color: Theme.of(context).primaryColor),
+                    onPressed: _sendImage,
+                  ),
                   Expanded(
                     child: TextField(
                       controller: _controller,

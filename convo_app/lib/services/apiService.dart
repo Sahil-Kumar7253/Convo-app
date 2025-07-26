@@ -103,4 +103,21 @@ class ApiService {
       throw Exception(json.decode(responseBody)['message'] ?? 'Failed to upload image.');
     }
   }
+
+  Future<void> sendImageMessage(String token, String receiverId, String filePath)async{
+    final uri = Uri.parse(Constants.sendImage);
+    final request = http.MultipartRequest('POST', uri);
+
+    request.headers['authorization'] = 'Bearer $token';
+    request.fields['receiverId'] = receiverId;
+    request.files.add(await http.MultipartFile.fromPath('image', filePath));
+
+    final response = await request.send();
+
+    if(response.statusCode != 201){
+      final responseBody = await response.stream.bytesToString();
+      throw Exception(json.decode(responseBody)['message'] ?? "Failed to send image.");
+    }
+  }
+
 }

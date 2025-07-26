@@ -63,13 +63,18 @@ const sendMessage = async (req, res) => {
 async function sendImageMessage(req, res) {
 
   try{
-    const {recieverId} = req.body;
+    const {receiverId} = req.body;
     const senderId = req.user._id;
     
+    console.log("\n--- [START] SEND IMAGE MESSAGE ---");
+    console.log("Sender ID:", senderId.toString());
+    console.log("Receiver ID:", receiverId);
+
+
     if(!req.file){
       return res.status(400).json({message : "No image file uploaded"});
     }
-    if(!recieverId){
+    if(!receiverId){
       return res.status(400).json({message : "User Not Found"});
     }
     const b64 = Buffer.from(req.file.buffer).toString("base64");
@@ -81,7 +86,7 @@ async function sendImageMessage(req, res) {
 
     const newMessage = new Message({
       sender: senderId,
-      receiver: recieverId,
+      receiver: receiverId,
       messageType : "image",
       imageUrl : result.secure_url
     });
@@ -89,15 +94,33 @@ async function sendImageMessage(req, res) {
     const savedMessage = await newMessage.save();
     await savedMessage.populate('sender', 'name email'); 
 
-    const io =req.io;
-    const recipientSocketId = userSocketMap[recieverId];
-    socket.emit('receive_private_message', savedMessage);
-    if (recipientSocketId) {
+    console.log("Message saved to DB. Attempting to emit via socket...");
+
+    const io = req.io;
+
+    console.log("Current Online Users (userSocketMap):", userSocketMap);
+
+    const senderSocketId = userSocketMap[senderId.toString()];
+    const recipientSocketId = userSocketMap[receiverId.toString()];
+
+    console.log(`Lookup for sender's socket ID (${senderId.toString()}):`, senderSocketId || "Not Found");
+    console.log(`Lookup for receiver's socket ID (${receiverId}):`, recipientSocketId || "Not Found");
+
+
+    if (senderSocketId) {
+      console.log(`Emitting to sender via socket ${senderSocketId}`);
+      io.to(senderSocketId).emit('receive_private_message', savedMessage);
+    }
+    
+    if (recipientSocketId && senderId.toString() !== receiverId.toString()) {
+      console.log(`Emitting to receiver via socket ${recipientSocketId}`);
       io.to(recipientSocketId).emit('receive_private_message', savedMessage);
     }
 
+    console.log("--- [END] SEND IMAGE MESSAGE ---");
+
     res.status(201).json(savedMessage);
-  }catch(e){
+  }catch(error){
     console.error("Image message error:", error);
     res.status(500).json({ message: 'Server error while sending image.' });
   }

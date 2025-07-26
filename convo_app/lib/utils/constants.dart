@@ -7,4 +7,5 @@ class Constants {
   static const String registerUrl = "$baseUrl/users/register";
   static const String getAllchats = "$baseUrl/messages/chats";
   static const String sendMsg = "$baseUrl/messages/send";
+  static const String sendImage = "$baseUrl/messages/image";
 }
