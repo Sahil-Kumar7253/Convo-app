@@ -165,6 +165,34 @@ async function getRecievedFriendRequests(req,res) {
   }
 }
 
+async function removeFriend(req,res){
+    const userId = req.user._id;
+    const friendId = req.params.friendId;
+
+    try{
+      await User.findByIdAndUpdate(userId, { $pull: { friends: friendId } });
+      await User.findByIdAndUpdate(friendId, { $pull: { friends: userId } });
+    
+      return res.status(200).json({message : "Friend removed successfully"}); 
+    }catch(error){
+      return res.status(500).json({message : "Server Error"});
+    }
+}
+
+async function declineFriendRequest(req,res){
+  const receiverId = req.user._id;
+  const senderId = req.params.senderId;
+
+  try{
+    await User.findByIdAndUpdate(receiverId, { $pull: { friendRequestsReceived: senderId } });
+    await User.findByIdAndUpdate(senderId, { $pull: { friendRequestsSent: receiverId } });
+    
+    return res.status(200).json({message : "Friend request declined"}); 
+  }catch(error){
+    return res.status(500).json({message : "Server Error"});
+  }
+}
+
 module.exports = {
     handleRegistration,
     handleLogin,
@@ -174,5 +202,7 @@ module.exports = {
     getSentFriendRequests,
     acceptFriendRequest,
     getFriends,
-    getRecievedFriendRequests
+    getRecievedFriendRequests,
+    removeFriend,
+    declineFriendRequest
 };
