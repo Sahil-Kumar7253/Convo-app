@@ -58,7 +58,16 @@ async function handleUpdateUser(req,res){
 
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find({ _id: { $ne: req.user._id } });
+    const currentUsers = await User.find({ _id: { $ne: req.user._id } });
+    const existingRelations = [
+    ...currentUsers.friends,
+    ...currentUsers.friendRequestsSent,
+    ...currentUsers.friendRequestsReceived,
+    currentUsers._id, 
+    ];
+
+    const users = await User.find({ _id: { $nin: existingRelations } });
+    
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
@@ -98,10 +107,60 @@ async function uploadProfileImage(req, res) {
   }
 }
 
+async function getSentFriendRequests(req,res) {
+  const sender = await User.findById(req.user._id);
+  const receiver = await User.findById(req.params.receiverId);
+ 
+  if(!receiver) return res.status(404).json({message : "User not found"});
+  if(sender._id.toString() === receiver._id.toString()) return res.status(400).json({message :"Can't send friend request to yourself"});
+  if(sender.friends.includes(receiver._id)) return res.status(400).json({message : "Already friends"});
+  if(sender.friendRequestsSent.includes(receiver._id)) return res.status(400).json({message : "Friend request already sent"});
+
+  sender.friendRequestsSent.push(receiver._id);
+  receiver.friendRequestsRecieved.push(sender._id);
+
+  await sender.save();
+  await receiver.save();
+
+  res.status(200).json({message : "Friend request sent"});
+}
+
+async function acceptFriendRequest(req,res) {
+  const reciever = await User.findById(req.user._id);
+  const sender = await User.findById(req.params.senderId);
+
+  if(!sender) return res.status(404).json({message : "User not found"});
+
+  reciever.friends.push(sender._id);
+  sender.friends.push(reciever._id);
+
+  reciever.friendRequestsRecieved = reciever.friendRequestsRecieved.filter(reqId => !reqId.equals(sender._id));
+  sender.friendRequestsSent = sender.friendRequestsSent.filter(reqId => !reqId.equals(reciever._id));
+  
+  await reciever.save();
+  await sender.save();
+
+  res.status(200).json({message : "Friend request accepted"});
+}
+
+async function getFriends(req,res) {
+   const user = await User.findById(req.user._id).populate('friends', 'name email image');
+   res.status(200).json(user.friends);
+}
+
+async function getRecievedFriendRequests(req,res) {
+   const user = await User.findById(req.user._id).populate('friendRequestsRecieved', 'name email image');
+   res.status(200).json(user.friendRequestsRecieved);
+}
+
 module.exports = {
     handleRegistration,
     handleLogin,
     handleUpdateUser,
     getUsers,
-    uploadProfileImage
+    uploadProfileImage,
+    getSentFriendRequests,
+    acceptFriendRequest,
+    getFriends,
+    getRecievedFriendRequests
 };

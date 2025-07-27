@@ -16,12 +16,24 @@ const userSchema = new mongoose.Schema({
         type : String,
         required : true,
     },
-
     image: {
-    type: String,
-    required: false,
-    default: 'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg',
+        type: String,
+        required: false,
+        default: 'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg',
     },
+    friends : [{
+        type : mongoose.Schema.Types.ObjectId,
+        ref : "User"
+    }],
+    friendRequestsSent : [{
+        type : mongoose.Schema.Types.ObjectId,
+        ref : "User"
+    }],
+    friendRequestsRecieved : [{
+        type : mongoose.Schema.Types.ObjectId,
+        ref : "User"
+    }]
+
 }, {timestamps : true});
 
 userSchema.pre("save" , async function(next){
