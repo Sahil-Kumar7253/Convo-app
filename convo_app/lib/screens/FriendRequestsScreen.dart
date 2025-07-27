@@ -28,6 +28,12 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
   }
 
+  void _rejectRequest(String senderId) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+    chatProvider.declineFriendRequest(authProvider.token!, senderId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,6 +66,11 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          IconButton(
+                            onPressed: () => _rejectRequest(user.id),
+                            icon: Icon(Icons.close),
+                            color: Colors.red,
+                          ),
                           IconButton(
                             onPressed: () => _acceptRequest(user.id),
                             icon: Icon(Icons.check),

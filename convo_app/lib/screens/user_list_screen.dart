@@ -1,6 +1,7 @@
 import 'package:convo_app/screens/profileScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/userModel.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import 'FindUserScreen.dart';
@@ -16,6 +17,31 @@ class UserListScreen extends StatefulWidget {
 
 class _UserListScreenState extends State<UserListScreen> {
 
+  void _showRemoveFriendDialog(UserModel user) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove Friend'),
+        content: const Text('Are you sure you want to remove this friend?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              chatProvider.removeFriend(authProvider.token!, user.id);
+              Navigator.of(context).pop();
+            },
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +132,7 @@ class _UserListScreenState extends State<UserListScreen> {
                             builder: (_) => ChatScreen(receiver: user),
                           ));
                         },
+                        onLongPress: () => _showRemoveFriendDialog(user),
                       ),
                     );
                   },

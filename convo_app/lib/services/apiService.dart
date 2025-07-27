@@ -166,4 +166,20 @@ class ApiService {
     );
     _handleResponse(response);
   }
+
+  Future<void> declineFriendRequest(String token, String senderId) async {
+    final response = await http.put(
+        Uri.parse("${Constants.friendRequestDeclineUrl}/$senderId"),
+        headers: {'authorization': 'Bearer $token'}
+    );
+    _handleResponse(response);
+  }
+
+  Future<void> removeFriend(String token, String friendId) async {
+    final response = await http.delete(
+      Uri.parse("${Constants.friendRemoveUrl}/$friendId"),
+      headers: {'authorization': 'Bearer $token'}
+    );
+    _handleResponse(response);
+  }
 }

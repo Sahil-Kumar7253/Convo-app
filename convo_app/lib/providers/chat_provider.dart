@@ -98,6 +98,26 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
+  Future<void> declineFriendRequest(String token, String senderId) async {
+    try {
+      await _apiService.declineFriendRequest(token, senderId);
+      _friendRequests.removeWhere((user) => user.id == senderId);
+      notifyListeners();
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<void> removeFriend(String token, String friendId) async {
+    try {
+      await _apiService.removeFriend(token, friendId);
+      _friends.removeWhere((user) => user.id == friendId);
+      notifyListeners();
+    } catch (e) {
+      print(e);
+    }
+  }
+
   Future<void> fetchChatHistory(String token, String receiverId) async {
     try {
       final history = await _apiService.getChatHistory(token, receiverId);
