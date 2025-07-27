@@ -15,6 +15,13 @@ class ChatProvider with ChangeNotifier {
   StreamSubscription? _messageSubscription;
   StreamSubscription? _deleteMessageSubscription;
 
+  List<UserModel> _friends = [];
+  List<UserModel> _friendRequests = [];
+  List<UserModel> _discoverableUsers = [];
+  List<UserModel> get friends => _friends;
+  List<UserModel> get friendRequests => _friendRequests;
+  List<UserModel> get discoverableUsers => _discoverableUsers;
+
   // We no longer need to store the AuthProvider instance here
 
   List<UserModel> get users => _users;
@@ -40,8 +47,58 @@ class ChatProvider with ChangeNotifier {
     }
   }
 
+  Future<void> fetchFriends(String token) async {
+    _friends = await _apiService.getFriends(token);
+    notifyListeners();
+  }
+
+  Future<void> fetchFriendRequests(String token) async {
+    try {
+      print("1. Fetching friend requests...");
+      _friendRequests = await _apiService.getFriendRequests(token);
+
+      // This log is crucial. It shows us what was received from the backend.
+      print("2. Received friend requests data: ${_friendRequests.length} items.");
+
+      notifyListeners();
+      print("3. Notified listeners.");
+    } catch (e) {
+      print("❌ ERROR in fetchFriendRequests: $e");
+    }
+  }
+
+  Future<void> fetchDiscoverableUsers(String token) async {
+    try {
+      _discoverableUsers = await _apiService.getUsers(token);
+      notifyListeners();
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<void> sendFriendRequest(String token, String receiverId) async {
+    try {
+      await _apiService.sendFriendRequest(token, receiverId);
+      // Remove the user from the discoverable list for instant UI feedback
+      _discoverableUsers.removeWhere((user) => user.id == receiverId);
+      notifyListeners();
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<void> acceptFriendRequest(String token, String senderId) async {
+    try {
+      await _apiService.acceptFriendRequest(token, senderId);
+      _friendRequests.removeWhere((user) => user.id == senderId);
+      await fetchFriends(token);
+      notifyListeners();
+    } catch (e) {
+      print(e);
+    }
+  }
+
   Future<void> fetchChatHistory(String token, String receiverId) async {
-    if (token == null) return;
     try {
       final history = await _apiService.getChatHistory(token, receiverId);
       _messages.clear();

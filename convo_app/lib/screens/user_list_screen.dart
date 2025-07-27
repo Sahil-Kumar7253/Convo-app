@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
+import 'FindUserScreen.dart';
+import 'FriendRequestsScreen.dart';
 import 'chat_screen.dart';
 
 class UserListScreen extends StatefulWidget {
@@ -13,22 +15,27 @@ class UserListScreen extends StatefulWidget {
 }
 
 class _UserListScreenState extends State<UserListScreen> {
-  // Since AuthWrapper now triggers the initial data fetch,
-  // we don't need to call it in initState here.
-  // This state class is ready for any future logic you want to add.
+
 
   @override
   Widget build(BuildContext context) {
+    Provider.of<ChatProvider>(context, listen: false).fetchFriends(
+      Provider.of<AuthProvider>(context, listen: false).token!,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Start a Conversation'),
         elevation: 1,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add_alt_1),
+            onPressed: () => Navigator.of(context).pushNamed(FriendRequestsScreen.routeName),
+          ),
           GestureDetector(
             onTap: (){
               Navigator.of(context).pushNamed(ProfileScreen.routeName);
             },
-
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: CircleAvatar(
@@ -49,8 +56,8 @@ class _UserListScreenState extends State<UserListScreen> {
       ),
       body: Consumer<ChatProvider>(
         builder: (ctx, chatProvider, _) {
-          if (chatProvider.users.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+          if (chatProvider.friends.isEmpty) {
+            return const Center(child: Text("Add Some Friend To Chat"));
           } else {
             return RefreshIndicator(
               onRefresh: () async {
@@ -59,9 +66,9 @@ class _UserListScreenState extends State<UserListScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: ListView.builder(
-                  itemCount: chatProvider.users.length,
+                  itemCount: chatProvider.friends.length,
                   itemBuilder: (ctx, i) {
-                    final user = chatProvider.users[i];
+                    final user = chatProvider.friends[i];
                     return Card(
                       elevation: 4.0,
                       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
@@ -107,6 +114,10 @@ class _UserListScreenState extends State<UserListScreen> {
             );
           }
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.of(context).pushNamed(FindUsersScreen.routeName),
+        child: const Icon(Icons.search),
       ),
     );
   }

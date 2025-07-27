@@ -58,20 +58,20 @@ async function handleUpdateUser(req,res){
 
 const getUsers = async (req, res) => {
   try {
-    const currentUsers = await User.find({ _id: { $ne: req.user._id } });
+    const currentUsers = await User.findById(req.user._id);
     const existingRelations = [
-    ...currentUsers.friends,
-    ...currentUsers.friendRequestsSent,
-    ...currentUsers.friendRequestsReceived,
+    ...currentUsers.friends || [],
+    ...currentUsers.friendRequestsSent || [],
+    ...currentUsers.friendRequestsReceived || [],
     currentUsers._id, 
     ];
 
     const users = await User.find({ _id: { $nin: existingRelations } });
     
-    res.json(users);
+    return res.json(users);
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
     console.log(error);
+    return res.status(500).json({ message: 'Server Error' });
   }
 };
 
@@ -122,7 +122,7 @@ async function getSentFriendRequests(req,res) {
   await sender.save();
   await receiver.save();
 
-  res.status(200).json({message : "Friend request sent"});
+  return res.status(200).json({message : "Friend request sent"});
 }
 
 async function acceptFriendRequest(req,res) {
@@ -140,17 +140,29 @@ async function acceptFriendRequest(req,res) {
   await reciever.save();
   await sender.save();
 
-  res.status(200).json({message : "Friend request accepted"});
+  return res.status(200).json({message : "Friend request accepted"});
 }
 
 async function getFriends(req,res) {
-   const user = await User.findById(req.user._id).populate('friends', 'name email image');
-   res.status(200).json(user.friends);
+  const user = await User.findById(req.user._id).populate('friends', 'name email image');
+  if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+  }
+  return res.json(user.friends);
 }
 
 async function getRecievedFriendRequests(req,res) {
-   const user = await User.findById(req.user._id).populate('friendRequestsRecieved', 'name email image');
-   res.status(200).json(user.friendRequestsRecieved);
+  try {
+    const user = await User.findById(req.user._id).populate('friendRequestsRecieved', 'name email image');
+    // ADD THIS CHECK to prevent a crash if the user is not found
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    return res.json(user.friendRequestsRecieved);
+  } catch (error) {
+    console.error("Error fetching friend requests:", error);
+    return res.status(500).json({ message: 'Server Error' });
+  }
 }
 
 module.exports = {

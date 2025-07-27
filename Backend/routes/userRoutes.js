@@ -13,7 +13,7 @@ router.put("/profile" , auth.checkforauthentication, userController.handleUpdate
 router.post('/profile/image', auth.checkforauthentication, upload.single('image'), userController.uploadProfileImage);
 
 router.get("/friends", auth.checkforauthentication,userController.getFriends);
-router.post("/friends-requests/recieved", auth.checkforauthentication,userController.getRecievedFriendRequests);
+router.get("/friends-requests/received", auth.checkforauthentication,userController.getRecievedFriendRequests);
 router.post("/friends-request/sent/:receiverId",auth.checkforauthentication,userController.getSentFriendRequests)
 router.put("/friends-request/accept/:senderId",auth.checkforauthentication,userController.acceptFriendRequest) 
 

@@ -8,4 +8,8 @@ class Constants {
   static const String getAllchats = "$baseUrl/messages/chats";
   static const String sendMsg = "$baseUrl/messages/send";
   static const String sendImage = "$baseUrl/messages/image";
+  static const String friendUrl = "$baseUrl/users/friends";
+  static const String friendRequestUrl = "$baseUrl/users/friends-requests/received";
+  static const String friendRequestSendUrl = "$baseUrl/users/friends-request/sent";
+  static const String friendRequestAcceptUrl = "$baseUrl/users/friends-request/accept";
 }

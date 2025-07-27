@@ -9,6 +9,15 @@ class ApiService {
 
   final String _baseUrl = Constants.baseUrl;
 
+  dynamic _handleResponse(http.Response response) {
+    final responseBody = json.decode(response.body);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return responseBody;
+    } else {
+      throw Exception(responseBody['message'] ?? 'An unknown error occurred.');
+    }
+  }
+
   Future<Map<String, dynamic>> register(String name, String email, String password) async {
     final response = await http.post(
       Uri.parse(Constants.registerUrl),
@@ -120,4 +129,41 @@ class ApiService {
     }
   }
 
+
+  //Friends
+
+  Future<List<UserModel>> getFriends(String token) async {
+    final response = await http.get(
+      Uri.parse(Constants.friendUrl),
+      headers: {'authorization': 'Bearer $token'}
+    );
+    final List<dynamic> friendsJson = _handleResponse(response);
+    return friendsJson.map((json) => UserModel.fromJson(json)).toList();
+  }
+
+  Future<List<UserModel>> getFriendRequests(String token) async {
+    final response = await http.get(
+      Uri.parse(Constants.friendRequestUrl),
+      headers: {'Authorization': 'Bearer $token'}
+    );
+    final List<dynamic> friendRequestsJson = _handleResponse(response);
+    return friendRequestsJson.map((json) => UserModel.fromJson(json)).toList();
+  }
+
+  Future<void> sendFriendRequest(String token, String recieverId) async {
+    final response = await http.post(
+      Uri.parse("${Constants.friendRequestSendUrl}/$recieverId"),
+      headers: {'Authorization': 'Bearer $token'}
+    );
+    print("Request Send Successfully");
+    _handleResponse(response);
+  }
+
+  Future<void> acceptFriendRequest(String token, String senderId) async {
+    final response = await http.put(
+      Uri.parse("${Constants.friendRequestAcceptUrl}/$senderId"),
+      headers: {'authorization': 'Bearer $token'}
+    );
+    _handleResponse(response);
+  }
 }
