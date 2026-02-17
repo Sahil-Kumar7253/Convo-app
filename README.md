@@ -53,7 +53,7 @@ Before you begin, ensure you have the following installed:
 - [MongoDB](https://www.mongodb.com/) account or local MongoDB installation
 
 ### For Mobile App:
-- [Flutter SDK](https://flutter.dev/docs/get-started/install) (SDK: ^3.8.1)
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) (v3.8.1 or later)
 - [Android Studio](https://developer.android.com/studio) or [Xcode](https://developer.apple.com/xcode/) (for iOS)
 - A physical device or emulator for testing
 
